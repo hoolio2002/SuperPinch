@@ -1,4 +1,3 @@
-
 #include "pch.h"
 #include "SuperPinch.h"
 #include <algorithm>
@@ -37,7 +36,13 @@ void SuperPinch::RenderSettings()
     ImGui::Separator();
     ImGui::Text("Target pinch speed (KPH)");
 
-    if (ImGui::InputFloat("##TargetKPH", &speed, 1.0f, 10.0f, "%.1f"))
+    if (ImGui::InputFloat(
+        "##TargetKPH",
+        &speed,
+        1.0f,
+        10.0f,
+        "%.1f"
+    ))
     {
         speed = std::clamp(speed, 1.0f, 1500.0f);
         cvar.setValue(speed);
