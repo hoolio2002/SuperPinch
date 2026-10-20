@@ -9,12 +9,11 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
-      - name: Checkout SuperPinch
+      - name: Checkout repository
         uses: actions/checkout@v5
 
       - name: Checkout BakkesMod SDK
@@ -28,14 +27,14 @@ jobs:
         with:
           arch: x64
 
-      - name: Verify files
+      - name: Check source files
         shell: pwsh
         run: |
           if (!(Test-Path "Superpinch.cpp")) {
-            throw "Superpinch.cpp is missing"
+            throw "Superpinch.cpp not found"
           }
           if (!(Test-Path "SuperPinch.h")) {
-            throw "SuperPinch.h is missing"
+            throw "SuperPinch.h not found"
           }
 
       - name: Compile plugin
