@@ -1,14 +1,13 @@
+
 #pragma once
 
 #include "bakkesmod/plugin/bakkesmodplugin.h"
-#include "bakkesmod/plugin/pluginwindow.h"
+#include "bakkesmod/plugin/PluginSettingsWindow.h"
 
-class SuperPinch : public BakkesMod::Plugin::BakkesModPlugin
+class SuperPinch : public BakkesMod::Plugin::BakkesModPlugin,
+                   public SettingsWindowBase
 {
 public:
     void onLoad() override;
     void RenderSettings() override;
-    void RenderWindow() override;
-    std::string GetPluginName() override;
-    void SetImGuiContext(uintptr_t ctx) override;
 };
