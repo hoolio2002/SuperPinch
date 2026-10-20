@@ -10,6 +10,9 @@ jobs:
   build:
     runs-on: windows-latest
 
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     steps:
       - name: Checkout SuperPinch
         uses: actions/checkout@v5
@@ -20,12 +23,12 @@ jobs:
           repository: bakkesmodorg/BakkesModSDK
           path: BakkesModSDK
 
-      - name: Set up MSVC compiler
+      - name: Set up MSVC
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
 
-      - name: Check source files
+      - name: Check files
         shell: pwsh
         run: |
           if (!(Test-Path "Superpinch.cpp")) {
@@ -34,21 +37,17 @@ jobs:
           if (!(Test-Path "SuperPinch.h")) {
             throw "SuperPinch.h is missing"
           }
-          if (!(Test-Path "BakkesModSDK")) {
-            throw "BakkesMod SDK checkout failed"
-          }
 
       - name: Compile SuperPinch
         shell: cmd
         run: |
-          cl /nologo /LD /EHsc /std:c++17 ^
+          cl /nologo /LD /EHsc /std:c++17 /DWIN32 /D_WINDOWS ^
             /I BakkesModSDK/include ^
             /I BakkesModSDK ^
             Superpinch.cpp ^
-            /link ^
-            /OUT:SuperPinch.dll
+            /link /OUT:SuperPinch.dll
 
-      - name: Upload compiled plugin
+      - name: Upload DLL
         uses: actions/upload-artifact@v4
         with:
           name: SuperPinch-Windows
