@@ -12,35 +12,43 @@ jobs:
 
     steps:
       - name: Checkout SuperPinch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Checkout BakkesMod SDK
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: bakkesmodorg/BakkesModSDK
           path: BakkesModSDK
 
-      - name: Set up MSVC
+      - name: Set up MSVC compiler
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          arch: x86
+          arch: x64
 
-      - name: Check project files
+      - name: Check source files
         shell: pwsh
         run: |
-          Get-ChildItem -Recurse -File |
-            Select-Object -ExpandProperty FullName
+          if (!(Test-Path "Superpinch.cpp")) {
+            throw "Superpinch.cpp is missing"
+          }
+          if (!(Test-Path "SuperPinch.h")) {
+            throw "SuperPinch.h is missing"
+          }
+          if (!(Test-Path "BakkesModSDK")) {
+            throw "BakkesMod SDK checkout failed"
+          }
 
-      - name: Build plugin
+      - name: Compile SuperPinch
         shell: cmd
         run: |
           cl /nologo /LD /EHsc /std:c++17 ^
             /I BakkesModSDK/include ^
+            /I BakkesModSDK ^
             Superpinch.cpp ^
-            BakkesModSDK/lib/pluginsdk.lib ^
-            /link /OUT:SuperPinch.dll
+            /link ^
+            /OUT:SuperPinch.dll
 
-      - name: Upload DLL
+      - name: Upload compiled plugin
         uses: actions/upload-artifact@v4
         with:
           name: SuperPinch-Windows
