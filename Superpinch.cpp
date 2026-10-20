@@ -1,62 +1,91 @@
-
 #include "bakkesmod/plugin/bakkesmodplugin.h"
 #include "bakkesmod/wrappers/GameObject/BallWrapper.h"
+
+#include <cmath>
 #include <chrono>
-#include <functional>
 
 class SuperPinch : public BakkesMod::Plugin::BakkesModPlugin
 {
 private:
-    std::chrono::steady_clock::time_point lastBoost{};
+    std::chrono::steady_clock::time_point lastTouch{};
+    bool hasBoosted = false;
 
     void onLoad() override
     {
-        cvarManager->log("SuperPinch loaded.");
-
-        gameWrapper->HookEvent(
-            "Function TAGame.Ball_TA.Touch",
-            std::bind(&SuperPinch::onBallTouch, this,
-                      std::placeholders::_1)
+        cvarManager->registerCvar(
+            "superpinch_speed_kph",
+            "150.0",
+            "SuperPinch target ball speed in KPH",
+            true,
+            true, 0.0f,
+            false, 0.0f,
+            true
         );
+
+        gameWrapper->HookEventWithCallerPost<BallWrapper>(
+            "Function TAGame.Ball_TA.OnCarTouch",
+            [this](BallWrapper ball, void* params,
+                   std::string eventName)
+            {
+                if (!gameWrapper->IsInFreeplay() &&
+                    !gameWrapper->IsInCustomTraining())
+                    return;
+
+                if (!ball)
+                    return;
+
+                const auto now = std::chrono::steady_clock::now();
+
+                if (hasBoosted &&
+                    now - lastTouch < std::chrono::milliseconds(300))
+                    return;
+
+                const float kph =
+                    cvarManager->getCvar(
+                        "superpinch_speed_kph"
+                    ).getFloatValue();
+
+                if (!std::isfinite(kph) || kph < 0.0f)
+                    return;
+
+                // Rocket League speed units:
+                // 1 Unreal unit/second = 0.036 km/h.
+                const float target = kph / 0.036f;
+
+                Vector v = ball.GetVelocity();
+
+                const float magnitude = std::sqrt(
+                    v.X * v.X + v.Y * v.Y + v.Z * v.Z
+                );
+
+                if (magnitude < 1.0f)
+                    return;
+
+                const float scale = target / magnitude;
+
+                ball.SetVelocity(Vector{
+                    v.X * scale,
+                    v.Y * scale,
+                    v.Z * scale
+                });
+
+                lastTouch = now;
+                hasBoosted = true;
+            }
+        );
+
+        cvarManager->log("SuperPinch loaded. Target speed: KPH.");
     }
 
     void onUnload() override
     {
         cvarManager->log("SuperPinch unloaded.");
     }
-
-    void onBallTouch(std::string eventName)
-    {
-        // Never modify the ball outside training modes.
-        if (!gameWrapper->IsInFreeplay() &&
-            !gameWrapper->IsInCustomTraining())
-            return;
-
-        auto now = std::chrono::steady_clock::now();
-
-        // Prevent repeated boosts from stacking immediately.
-        if (now - lastBoost < std::chrono::milliseconds(350))
-            return;
-
-        auto game = gameWrapper->GetCurrentGameState();
-        if (!game) return;
-
-        auto ball = game.GetBall();
-        if (!ball) return;
-
-        Vector velocity = ball.GetVelocity();
-
-        // Prototype boost; tune after verifying the touch hook.
-        constexpr float multiplier = 1.8f;
-        ball.SetVelocity(velocity * multiplier);
-
-        lastBoost = now;
-    }
 };
 
 BAKKESMOD_PLUGIN(
     SuperPinch,
     "SuperPinch",
-    "0.1.0",
+    "1.0.0",
     PLUGINTYPE_FREEPLAY
 )
