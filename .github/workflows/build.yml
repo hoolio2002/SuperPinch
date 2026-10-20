@@ -1,0 +1,42 @@
+name: Build SuperPinch
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Checkout BakkesMod SDK
+        uses: actions/checkout@v4
+        with:
+          repository: bakkesmodorg/BakkesModSDK
+          path: BakkesModSDK
+
+      - name: Set up MSVC compiler
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Compile plugin
+        shell: cmd
+        run: |
+          cl /nologo /LD /EHsc /std:c++17 ^
+            /I BakkesModSDK/include ^
+            SuperPinch.cpp ^
+            /link ^
+            /LIBPATH:BakkesModSDK/lib ^
+            pluginsdk.lib ^
+            /OUT:SuperPinch.dll
+
+      - name: Upload DLL
+        uses: actions/upload-artifact@v4
+        with:
+          name: SuperPinch-Windows
+          path: SuperPinch.dll
