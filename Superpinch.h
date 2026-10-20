@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include "bakkesmod/plugin/bakkesmodplugin.h"
